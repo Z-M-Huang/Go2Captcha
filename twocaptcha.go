@@ -19,6 +19,24 @@ type Client struct {
 	Client *http.Client
 }
 
+//SolveImageCaptcha solve image captcha
+func (c *Client) SolveImageCaptcha(base64Str string) (string, error) {
+	requestForm := url.Values{}
+	requestForm.Add("method", "base64")
+	requestForm.Add("body", base64Str)
+	requestForm.Add("soft_id", "2099")
+
+	id, err := c.sendRequest(requestForm, requestURL, 20, 5*time.Second)
+	if err != nil {
+		return "", err
+	}
+
+	responseForm := url.Values{}
+	responseForm.Add("action", "get")
+	responseForm.Add("id", id)
+	return c.sendRequest(responseForm, responseURL, 20, 5*time.Second)
+}
+
 //SolveRecaptchaV2 solve recaptcha v2
 func (c *Client) SolveRecaptchaV2(siteURL, recaptchaKey string) (string, error) {
 	requestForm := url.Values{}
@@ -33,10 +51,6 @@ func (c *Client) SolveRecaptchaV2(siteURL, recaptchaKey string) (string, error) 
 	}
 
 	responseForm := url.Values{}
-	responseForm.Add("googlekey", recaptchaKey)
-	responseForm.Add("pageurl", siteURL)
-	responseForm.Add("method", "userrecaptcha")
-	responseForm.Add("soft_id", "2099")
 	responseForm.Add("id", id)
 	responseForm.Add("action", "get")
 	return c.sendRequest(responseForm, responseURL, 20, 5*time.Second)
