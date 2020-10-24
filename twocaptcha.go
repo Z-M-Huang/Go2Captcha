@@ -76,7 +76,7 @@ func (c *Client) ReportAnswer(isGood bool, id string) error {
 	req.Add("action", action)
 	req.Add("id", id)
 
-	resp, err := c.Client.Get(fmt.Sprintf("%s/?key=%s&action=%s&id=%s", responseURL, c.APIKey, action, id))
+	resp, err := c.Client.Get(fmt.Sprintf("%s?key=%s&action=%s&id=%s", responseURL, c.APIKey, action, id))
 	if err != nil {
 		return fmt.Errorf("ReportAnswer Send New Request: [%s]", err.Error())
 	}
