@@ -21,39 +21,76 @@ type Client struct {
 
 //SolveImageCaptcha solve image captcha
 func (c *Client) SolveImageCaptcha(base64Str string) (string, error) {
-	requestForm := url.Values{}
-	requestForm.Add("method", "base64")
-	requestForm.Add("body", base64Str)
-	requestForm.Add("soft_id", "2099")
+	req := url.Values{}
+	req.Add("method", "base64")
+	req.Add("body", base64Str)
+	req.Add("soft_id", "2099")
 
-	id, err := c.sendRequest(requestForm, requestURL, 20, 5*time.Second)
+	id, err := c.sendRequest(req, requestURL, 20, 5*time.Second)
 	if err != nil {
-		return "", err
+		return "", fmt.Errorf("SolveImageCaptcha Send New Request: [%s]", err.Error())
 	}
 
-	responseForm := url.Values{}
-	responseForm.Add("action", "get")
-	responseForm.Add("id", id)
-	return c.sendRequest(responseForm, responseURL, 20, 5*time.Second)
+	resp := url.Values{}
+	resp.Add("action", "get")
+	resp.Add("id", id)
+	result, err := c.sendRequest(resp, responseURL, 20, 5*time.Second)
+	if err != nil {
+		return "", fmt.Errorf("SolveImageCaptcha Send Request to Get Result: [%s]", err.Error())
+	}
+	return result, nil
 }
 
 //SolveRecaptchaV2 solve recaptcha v2
 func (c *Client) SolveRecaptchaV2(siteURL, recaptchaKey string) (string, error) {
-	requestForm := url.Values{}
-	requestForm.Add("googlekey", recaptchaKey)
-	requestForm.Add("pageurl", siteURL)
-	requestForm.Add("method", "userrecaptcha")
-	requestForm.Add("soft_id", "2099")
+	req := url.Values{}
+	req.Add("googlekey", recaptchaKey)
+	req.Add("pageurl", siteURL)
+	req.Add("method", "userrecaptcha")
+	req.Add("soft_id", "2099")
 
-	id, err := c.sendRequest(requestForm, requestURL, 20, 5*time.Second)
+	id, err := c.sendRequest(req, requestURL, 20, 5*time.Second)
 	if err != nil {
-		return "", err
+		return "", fmt.Errorf("SolveRecaptchaV2 Send New Request: [%s]", err.Error())
 	}
 
-	responseForm := url.Values{}
-	responseForm.Add("id", id)
-	responseForm.Add("action", "get")
-	return c.sendRequest(responseForm, responseURL, 20, 5*time.Second)
+	resp := url.Values{}
+	resp.Add("id", id)
+	resp.Add("action", "get")
+	result, err := c.sendRequest(resp, responseURL, 20, 5*time.Second)
+	if err != nil {
+		return "", fmt.Errorf("SolveRecaptchaV2 Send Request to Get Result: [%s]", err.Error())
+	}
+	return result, nil
+}
+
+//ReportAnswer report answer
+func (c *Client) ReportAnswer(isGood bool, id string) error {
+	req := url.Values{}
+	action := ""
+	if isGood {
+		action = "reportgood"
+	} else {
+		action = "reportbad"
+	}
+	req.Add("action", action)
+	req.Add("id", id)
+
+	resp, err := c.Client.Get(fmt.Sprintf("%s/?key=%s&action=%s&id=%s", responseURL, c.APIKey, action, id))
+	if err != nil {
+		return fmt.Errorf("ReportAnswer Send New Request: [%s]", err.Error())
+	}
+	defer resp.Body.Close()
+	bodyContent, err := ioutil.ReadAll(resp.Body)
+	if err != nil {
+		return fmt.Errorf("ReportAnswer Read Response: [%s]", err.Error())
+	}
+
+	content := string(bodyContent)
+	if !strings.Contains(content, "OK_REPORT_RECORDED") {
+		return fmt.Errorf("ReportAnswer: Unknown Response [%s] Received", content)
+	}
+	return nil
 }
 
 func (c *Client) sendRequest(form url.Values, URL string, retry int, delay time.Duration) (string, error) {
