@@ -19,8 +19,8 @@ type Client struct {
 	Client *http.Client
 }
 
-//SolveImageCaptcha solve image captcha
-func (c *Client) SolveImageCaptcha(base64Str string) (string, error) {
+//SolveImageCaptcha solve image captcha, return answer, id, error
+func (c *Client) SolveImageCaptcha(base64Str string) (string, string, error) {
 	req := url.Values{}
 	req.Add("method", "base64")
 	req.Add("body", base64Str)
@@ -28,7 +28,7 @@ func (c *Client) SolveImageCaptcha(base64Str string) (string, error) {
 
 	id, err := c.sendRequest(req, requestURL, 20, 5*time.Second)
 	if err != nil {
-		return "", fmt.Errorf("SolveImageCaptcha Send New Request: [%s]", err.Error())
+		return "", id, fmt.Errorf("SolveImageCaptcha Send New Request: [%s]", err.Error())
 	}
 
 	resp := url.Values{}
@@ -36,13 +36,13 @@ func (c *Client) SolveImageCaptcha(base64Str string) (string, error) {
 	resp.Add("id", id)
 	result, err := c.sendRequest(resp, responseURL, 20, 5*time.Second)
 	if err != nil {
-		return "", fmt.Errorf("SolveImageCaptcha Send Request to Get Result: [%s]", err.Error())
+		return "", id, fmt.Errorf("SolveImageCaptcha Send Request to Get Result: [%s]", err.Error())
 	}
-	return result, nil
+	return result, id, nil
 }
 
-//SolveRecaptchaV2 solve recaptcha v2
-func (c *Client) SolveRecaptchaV2(siteURL, recaptchaKey string) (string, error) {
+//SolveRecaptchaV2 solve recaptcha v2, return answer, id, error
+func (c *Client) SolveRecaptchaV2(siteURL, recaptchaKey string) (string, string, error) {
 	req := url.Values{}
 	req.Add("googlekey", recaptchaKey)
 	req.Add("pageurl", siteURL)
@@ -51,7 +51,7 @@ func (c *Client) SolveRecaptchaV2(siteURL, recaptchaKey string) (string, error) 
 
 	id, err := c.sendRequest(req, requestURL, 20, 5*time.Second)
 	if err != nil {
-		return "", fmt.Errorf("SolveRecaptchaV2 Send New Request: [%s]", err.Error())
+		return "", id, fmt.Errorf("SolveRecaptchaV2 Send New Request: [%s]", err.Error())
 	}
 
 	resp := url.Values{}
@@ -59,9 +59,9 @@ func (c *Client) SolveRecaptchaV2(siteURL, recaptchaKey string) (string, error) 
 	resp.Add("action", "get")
 	result, err := c.sendRequest(resp, responseURL, 20, 5*time.Second)
 	if err != nil {
-		return "", fmt.Errorf("SolveRecaptchaV2 Send Request to Get Result: [%s]", err.Error())
+		return "", id, fmt.Errorf("SolveRecaptchaV2 Send Request to Get Result: [%s]", err.Error())
 	}
-	return result, nil
+	return result, id, nil
 }
 
 //ReportAnswer report answer
